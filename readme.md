@@ -102,6 +102,10 @@ Please refer to the script header for more details.
 5. Changelog
 -------------
 
+### v2.2.0 - 2018-01-02 ###
+
+* Added features to poly_pkt_fwd, see dedicated [read.me](https://github.com/ch2i/packet_forwarder/blob/master/poly_pkt_fwd/readme.md)
+
 ### v2.1.0 - 2015-06-29 ###
 
 * Added helper script for concentrator reset through GPIO, needed on IoT Starter Kit (reset_pkt_fwd.sh).

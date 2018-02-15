@@ -30,6 +30,102 @@ up/down stream, all can be (de)activated by modifying the json.
 To learn more about the network protocol between the gateway and the server, 
 please read the PROTOCOL.TXT document.
 
+Specific Raspberry PI boards version features
+=============================================
+
+To be able to drive Raspbery PI concentrator on boards LED, this program
+use ~~bcm2835 library, you need to install them before anything.
+see http://www.airspayce.com/mikem/bcm2835/~~ gpiolib which control GPIO using 
+linux filesystem, making this packet forwarder more compatible with different
+target.
+
+This version has been written to works with Linklabs board and also with
+ic880a concentrator + Raspberry Pi Plate.
+https://github.com/ch2i/iC880A-Raspberry-PI
+
+Option for LED are in the configuration file so it should works with 
+any board just adjusting GPIO settings. Settings are the following, 
+a name and the GPIO pin number. Names are :
+
+- `led_heartbeat` LED used for hearbeat, will always blink when running
+- `led_down` LED used for downstream, will blink on each downstream from server 
+- `led_error` LED used for hearbeat, will blink when a error occured
+- `led_packet` LED will blink on each packet received
+- `led_pps` LED used for GPS PPS indicator (mainly linklabs board)
+- `pin_pps` Pin where PPS signal is connected to (if any, mainly linklabs board)
+- `pin_reset` GPIO pin connected to SX1301 concentrator reset
+
+GPS PPS pin on linklabs boards are not connected to LED but on a GPIO, so `led_pps` 
+and `pin_pps` are used for a "software link", incoming PPS signal going to GPIO input
+is redirected to GPIO led output, thus for example, with linklabs, configuration can be 
+
+
+```json
+  "pin_pps": 4,     /* GPIO4 PPS from GPS */
+  "led_pps": 25,    /* GPIO25 PPS RED */
+  "led_packet": 27, /* GPIO27 RED   */
+```
+
+for ic880a RPI plate (4 leds), configuration can be 
+```json
+  "led_heartbeat": 4, /* GPIO4 Blue   */
+  "led_down": 18,     /* GPIO18 White */
+  "led_error": 23,    /* GPIO23 Red   */
+  "led_packet": 24,   /* GPIO24 Green */
+  "pin_reset": 17,    /* GPIO17 concentrator reset */
+
+```
+
+And for RAK831 RPI Zero plate configuration can be (no led pins)
+```json
+  "pin_reset": 25,    /* GPIO25 concentrator reset */
+```
+
+  
+An extented Log ouput on each packet received has also been added to this version, this
+can be usefull for monitoring packet recevided by concentrator, regardless if they are or
+not send the gateway. It's logged as info with the following informations
+
+INFO: [#DeviceAddr] containing the device Addr (as seen on TTN dashboard) so you can 
+filter with a grep for example
+`tail -f /var/log/lora_pkt_fwd.log | grep "\[\#"`
+
+then it's followed by :
+
+- `jRQ` for join request 
+- `jAC` for join accept 
+- `uUP` for unconfirmed up
+- `uDN` for unconfirmed down
+- `cUP` for confirmed up 
+- `cDN` for confirmed down 
+- `RFU` for RFU
+
+Other following data are classic information of frame received. Here below an example of log
+
+```
+root@pi01(ro):~# tail -f /var/log/lora_pkt_fwd.log
+INFO: [up] PUSH_ACK for server log.gatewaystats.org received in 26 ms
+INFO: [down] for server log.gatewaystats.org PULL_ACK received in 25 ms
+INFO: [#25FAAE33] RFU CRC:Bad Freq:867.30MHz ch:4 RFch:0 LORA[SF7 125Khz 2/3] RSSI:-107dB SNR:-11.5dB Size:232b
+INFO: [down] for server router.eu.thethings.network PULL_ACK received in 40 ms
+INFO: [down] for server log.gatewaystats.org PULL_ACK received in 26 ms
+INFO: [#1DCDB85F] cUP CRC:OK Freq:867.10MHz ch:3 RFch:0 LORA[SF12 125Khz 4/5] RSSI:-65dB SNR:+9.0dB Size:16b Data:'gF+4zR0ArAEBqkBtIvDn+A=='
+INFO: [up] PUSH_ACK for server router.eu.thethings.network received in 40 ms
+INFO: [up] PUSH_ACK for server log.gatewaystats.org received in 26 ms
+INFO: [down] for server router.eu.thethings.network serv_addr[ic]PULL_RESP received :)
+INFO: [down] a packet will be sent on timestamp value 2481851356
+INFO: [#87802833] jAC CRC:Bad Freq:867.50MHz ch:5 RFch:0 LORA[SF7 125Khz 4/7] RSSI:-107dB SNR:-11.0dB Size:20b
+INFO: [down] for server router.eu.thethings.network PULL_ACK received in 43 ms
+INFO: [#DD5343A9] jAC CRC:Bad Freq:868.10MHz ch:0 RFch:1 LORA[SF7 125Khz 4/5] RSSI:-105dB SNR:-7.0dB Size:23b
+INFO: [#37F76D0D] jRQ CRC:Bad Freq:867.10MHz ch:3 RFch:0 LORA[SF7 125Khz 4/5] RSSI:-102dB SNR:-7.0dB Size:23b
+INFO: [#1D57298D] uUP CRC:OK Freq:867.30MHz ch:4 RFch:0 LORA[SF7 125Khz 4/5] RSSI:-95dB SNR:-3.0dB Size:23b Data:'QI0pVx2ADgABMTFQD+MBsz7x6VL877c='
+INFO: [#1D57298D] uUP CRC:OK Freq:867.50MHz ch:5 RFch:0 LORA[SF7 125Khz 4/5] RSSI:-49dB SNR:+7.5dB Size:23b Data:'QI0pVx2ADgABMTFQD+MBsz7x6VL877c='
+INFO: [up] PUSH_ACK for server router.eu.thethings.network received in 42 ms
+INFO: [up] PUSH_ACK for server log.gatewaystats.org received in 27 ms
+
+```
+
+
 2. System schematic and definitions
 ------------------------------------
                                       

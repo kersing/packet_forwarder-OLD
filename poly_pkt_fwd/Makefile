@@ -19,6 +19,7 @@ RELEASE_VERSION := $(shell cat ../VERSION)
 CC := $(CROSS_COMPILE)gcc
 AR := $(CROSS_COMPILE)ar
 
+#CFLAGS := -O2 -Wall -Wextra -std=c99 -Iinc -I.
 CFLAGS := -O2 -Wall -Wextra -std=c99 -Iinc -I.
 VFLAG := -D VERSION_STRING="\"$(RELEASE_VERSION)\""
 
@@ -36,23 +37,24 @@ LGW_INC += $(LGW_PATH)/inc/loragw_gps.h
 ### Linking options
 
 ifeq ($(CFG_SPI),native)
-  LIBS := -lloragw -lrt -lpthread
+  LIBS := -lloragw -lrt -lpthread -lm
 else ifeq ($(CFG_SPI),ftdi)
-  LIBS := -lloragw -lrt -lpthread -lmpsse
+  LIBS := -lloragw -lrt -lpthread -lmpsse -lm
 else ifeq ($(CFG_SPI),mac)
-    LIBS := -lloragw -lpthread -lmpsse
+    LIBS := -lloragw -lpthread -lmpsse -lm
 else
   # keep compatibility with SX1301 HAL version 1.2.x and bellow
   ifeq ($(LGW_PHY),native)
-    LIBS := -lloragw -lrt -lpthread
+    LIBS := -lloragw -lrt -lpthread -lm
   else ifeq ($(LGW_PHY),ftdi)
-    LIBS := -lloragw -lrt -lpthread -lmpsse
+    LIBS := -lloragw -lrt -lpthread -lmpsse -lm
   else ifeq ($(LGW_PHY),mac)
-    LIBS := -lloragw -lpthread -lmpsse
+    LIBS := -lloragw -lpthread -lmpsse -lm
   else
     $(error [error] Can't find configuration for SPI phy)
   endif
 endif
+
 
 ### General build targets
 
@@ -73,15 +75,18 @@ obj/parson.o: src/parson.c inc/parson.h
 obj/monitor.o: src/monitor.c inc/monitor.h 
 	$(CC) -c $(CFLAGS) $< -o $@
 
+obj/gpiolib.o: src/gpiolib.c inc/gpiolib.h 
+	$(CC) -c $(CFLAGS) $< -o $@
+
 obj/ghost.o: src/ghost.c inc/ghost.h $(LGW_INC)
 	$(CC) -I$(LGW_PATH)/inc -c $(CFLAGS) $< -o $@
 
 ### Main program compilation and assembly
 
-obj/$(APP_NAME).o: src/$(APP_NAME).c $(LGW_INC) inc/parson.h inc/base64.h inc/ghost.h inc/monitor.h
+obj/$(APP_NAME).o: src/$(APP_NAME).c $(LGW_INC) inc/parson.h inc/base64.h inc/ghost.h inc/monitor.h inc/gpiolib.h
 	$(CC) -c $(CFLAGS) $(VFLAG) -I$(LGW_PATH)/inc $< -o $@
 
-$(APP_NAME): obj/$(APP_NAME).o $(LGW_PATH)/libloragw.a obj/parson.o obj/base64.o obj/ghost.o obj/monitor.o 
-	$(CC) -L$(LGW_PATH) $< obj/parson.o obj/base64.o obj/ghost.o obj/monitor.o -o $@ $(LIBS)
+$(APP_NAME): obj/$(APP_NAME).o $(LGW_PATH)/libloragw.a obj/parson.o obj/base64.o obj/ghost.o obj/monitor.o obj/gpiolib.o
+	$(CC) -L$(LGW_PATH) $< obj/parson.o obj/base64.o obj/ghost.o obj/monitor.o obj/gpiolib.o -o $@ $(LIBS)
 
 ### EOF
